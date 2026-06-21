@@ -13,7 +13,7 @@ A responsive student accommodation web application (PG listing) built with HTML,
 
 1. Create a MySQL database, e.g. `student_accommodation`.
 2. Import `db/schema.sql` into your MySQL instance.
-3. Update DB credentials in `backend/connection.php`.
+3. Copy `.env.example` to `.env` and update credentials, or set `DB_HOST`, `DB_USER`, `DB_PASS`, and `DB_NAME` in your environment.
 4. Serve the `public/` folder via a PHP-enabled webserver (Apache, Nginx + PHP-FPM).
 
 ## Try locally (PHP built-in server)
