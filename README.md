@@ -41,6 +41,24 @@ If you prefer the GitHub API or automated creation, provide a token and I can he
 
 Deploy to any PHP-capable hosting (shared hosting, VPS). For modern deployments consider using services that support PHP and MySQL.
 
+### Docker deployment
+
+You can run the project locally or on any container host with Docker support:
+
+```bash
+docker-compose up --build
+```
+
+Then open: http://localhost:8080
+
+The application will connect to the MySQL service configured in `docker-compose.yml`.
+
+If you need to import the schema after the database starts:
+
+```bash
+docker exec -i $(docker-compose ps -q db) mysql -u root -prootpass student_accommodation < db/schema.sql
+```
+
 ## Push to GitHub
 
 1. Create a remote repository on GitHub (via website or `gh` CLI).
