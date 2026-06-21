@@ -65,3 +65,19 @@ If you prefer the GitHub API or automated creation, provide a token and I can he
 - Auth uses PHP sessions; replace with JWT or stronger session handling for production.
 - React component is loaded via CDN/Babel for demo; use a proper build setup for production.
 
+## New features added
+- Server-side pagination and search on the listing page (`page`, `per_page`, `q`).
+- User profile page at `/profile.php` with editable `name` and `phone`.
+- Signup accepts `phone` and stores it in the database.
+- React shortlist converted to a Vite-built app; build artifacts are placed in `public/react`.
+
+## Building React locally
+From the `react-app` folder run:
+
+```bash
+npm install
+npm run build
+```
+
+This outputs files into `public/react` which are automatically loaded by the main page.
+
