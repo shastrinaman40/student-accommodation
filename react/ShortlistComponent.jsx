@@ -1,18 +1,49 @@
 function ShortlistComponent(){
-  const [items, setItems] = React.useState([]);
-  React.useEffect(()=>{
-    // demo: fetch all properties then filter by interested for user_id=1
-    fetch('/backend/api.php?action=list').then(r=>r.json()).then(data=>{
-      if (!data.success) return;
-      // In a real app, call an endpoint to fetch user's shortlist. Here we simulate by fetching interested_users table via a new API or assume none.
-      setItems([]);
+  const [items, setItems] = React.useState(null);
+  const userId = 1; // demo user
+
+  function load(){
+    fetch(`/backend/api.php?action=shortlist&user_id=${userId}`).then(r=>r.json()).then(data=>{
+      if (data.success) setItems(data.data);
+      else setItems([]);
     });
-  }, []);
+  }
+
+  React.useEffect(()=>{ load(); }, []);
+
+  function toggleInterest(pid){
+    fetch('/backend/api.php?action=toggle_interest', {
+      method: 'POST',
+      headers: {'Content-Type':'application/x-www-form-urlencoded'},
+      body: `user_id=${userId}&property_id=${pid}`
+    }).then(r=>r.json()).then(resp=>{
+      if (resp.success) load();
+    });
+  }
+
+  if (items === null) return (
+    <div className="card"><div className="card-body">Loading shortlist...</div></div>
+  );
+
   return (
     <div className="card">
       <div className="card-body">
         <h5 className="card-title">Your Shortlist</h5>
-        <p className="card-text">Shortlist loads here (demo component).</p>
+        {items.length === 0 && <p className="card-text">No items in your shortlist.</p>}
+        <div className="list-group">
+          {items.map(it=> (
+            <div key={it.id} className="list-group-item d-flex justify-content-between align-items-center">
+              <div>
+                <strong>{it.name}</strong>
+                <div className="small">{it.city} · ₹{it.price}</div>
+              </div>
+              <div>
+                <a className="btn btn-sm btn-primary me-2" href={`/property.php?id=${it.id}`}>View</a>
+                <button className="btn btn-sm btn-outline-danger" onClick={()=>toggleInterest(it.id)}>Remove</button>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

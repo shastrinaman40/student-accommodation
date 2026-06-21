@@ -24,6 +24,19 @@ php -S localhost:8000 -t public
 
 Then open `http://localhost:8000` in your browser.
 
+## Push to GitHub
+
+1. Create a remote repository on GitHub (via website or `gh` CLI).
+2. Add remote and push:
+
+```bash
+git remote add origin https://github.com/your-username/student-accommodation.git
+git branch -M main
+git push -u origin main
+```
+
+If you prefer the GitHub API or automated creation, provide a token and I can help create the remote.
+
 ## Deployment
 
 Deploy to any PHP-capable hosting (shared hosting, VPS). For modern deployments consider using services that support PHP and MySQL.

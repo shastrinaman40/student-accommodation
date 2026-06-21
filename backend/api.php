@@ -59,6 +59,21 @@ if ($action === 'detail') {
     json_die(['success'=>true,'data'=>$prop]);
 }
 
+if ($action === 'shortlist') {
+    $user_id = intval($_GET['user_id'] ?? 0);
+    if (!$user_id) json_die(['success'=>false,'error'=>'missing user_id']);
+    $stmt = $conn->prepare("SELECT p.* FROM properties p JOIN interested_users iu ON p.id=iu.property_id WHERE iu.user_id=?");
+    $stmt->bind_param('i',$user_id);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    $rows = [];
+    while ($r = $res->fetch_assoc()) {
+        $r['images'] = $r['images'] ? explode(',', $r['images']) : [];
+        $rows[] = $r;
+    }
+    json_die(['success'=>true,'data'=>$rows]);
+}
+
 if ($action === 'toggle_interest') {
     // expects POST: user_id, property_id
     $user_id = intval($_POST['user_id'] ?? 0);
