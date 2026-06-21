@@ -11,6 +11,10 @@
 <nav class="navbar navbar-expand-lg navbar-light bg-light">
   <div class="container-fluid">
     <a class="navbar-brand" href="#">Student Accommodation</a>
+    <div id="nav-user-area" class="d-flex ms-auto">
+      <button id="login-btn" class="btn btn-outline-primary btn-sm me-2">Login</button>
+      <button id="signup-btn" class="btn btn-primary btn-sm">Sign up</button>
+    </div>
   </div>
 </nav>
 
@@ -41,6 +45,37 @@
   </div>
 
   <div id="listing" class="row"></div>
+</div>
+
+<!-- Login Modal -->
+<div class="modal" tabindex="-1" id="loginModal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">Login</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <div class="mb-3"><input id="login-email" class="form-control" placeholder="Email"></div>
+        <div class="mb-3"><input id="login-password" type="password" class="form-control" placeholder="Password"></div>
+        <div id="login-error" class="text-danger small"></div>
+      </div>
+      <div class="modal-footer"><button id="login-submit" class="btn btn-primary">Login</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- Signup Modal -->
+<div class="modal" tabindex="-1" id="signupModal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">Sign up</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <div class="mb-3"><input id="signup-name" class="form-control" placeholder="Full name"></div>
+        <div class="mb-3"><input id="signup-email" class="form-control" placeholder="Email"></div>
+        <div class="mb-3"><input id="signup-password" type="password" class="form-control" placeholder="Password"></div>
+        <div id="signup-error" class="text-danger small"></div>
+      </div>
+      <div class="modal-footer"><button id="signup-submit" class="btn btn-primary">Create account</button></div>
+    </div>
+  </div>
 </div>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>

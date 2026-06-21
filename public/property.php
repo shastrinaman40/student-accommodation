@@ -40,14 +40,30 @@ while($a = $amenRes->fetch_assoc()) $amenities[] = $a['name'];
 </div>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
-$('#interest-btn').on('click', function(){
-  const pid = $(this).data('id');
-  // demo user id=1
-  $.post('/backend/api.php?action=toggle_interest', {user_id:1, property_id: pid}, function(resp){
-    if (resp.success) {
-      $('#interest-btn').text(resp.interested ? 'Interested ✓' : 'Mark Interested');
-    }
-  }, 'json');
+$(function(){
+  function loadMeAndState(){
+    $.getJSON('/backend/api.php?action=me', function(u){
+      if (u.success){
+        // check interest
+        $.getJSON('/backend/api.php?action=is_interested&property_id=<?php echo $prop['id']; ?>', function(r){
+          if (r.success && r.interested) $('#interest-btn').text('Interested ✓');
+        });
+      }
+    });
+  }
+  loadMeAndState();
+
+  $('#interest-btn').on('click', function(){
+    const pid = $(this).data('id');
+    $.post('/backend/api.php?action=toggle_interest', {property_id: pid}, function(resp){
+      if (resp.success) {
+        $('#interest-btn').text(resp.interested ? 'Interested ✓' : 'Mark Interested');
+      } else if (resp.error){
+        // show login modal if not logged in
+        $('#loginModal').modal('show');
+      }
+    }, 'json');
+  });
 });
 </script>
 </body>

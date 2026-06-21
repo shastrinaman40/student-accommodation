@@ -30,15 +30,54 @@ function fetchList(){
 }
 
 $(function(){
+  let currentUser = null;
+  function loadMe(){
+    $.getJSON('/backend/api.php?action=me', function(resp){
+      if (resp.success) {
+        currentUser = resp.user;
+        $('#nav-user-area').html(`<div class="me-2">Hello, ${resp.user.name}</div><button id="logout-btn" class="btn btn-outline-secondary btn-sm">Logout</button>`);
+      } else {
+        $('#nav-user-area').html('<button id="login-btn" class="btn btn-outline-primary btn-sm me-2">Login</button><button id="signup-btn" class="btn btn-primary btn-sm">Sign up</button>');
+      }
+    });
+  }
+  loadMe();
+
   fetchList();
   $('#apply-filters').on('click', fetchList);
   $('#listing').on('click', '.interest-btn', function(){
     const pid = $(this).data('id');
     const btn = $(this);
+    if (!currentUser) { $('#loginModal').modal('show'); return; }
     btn.prop('disabled', true).text('...');
-    $.post('/backend/api.php?action=toggle_interest', {user_id:1, property_id: pid}, function(resp){
+    $.post('/backend/api.php?action=toggle_interest', {property_id: pid}, function(resp){
       if (resp.success) btn.text(resp.interested ? 'Interested ✓' : '♡ Interested');
       btn.prop('disabled', false);
+      loadMe();
+    }, 'json');
+  });
+
+  // handle login/signup buttons via delegation
+  $(document).on('click', '#login-btn', function(){ $('#loginModal').modal('show'); });
+  $(document).on('click', '#signup-btn', function(){ $('#signupModal').modal('show'); });
+  $(document).on('click', '#logout-btn', function(){ $.getJSON('/backend/api.php?action=logout', function(){ currentUser=null; loadMe(); }); });
+
+  $('#login-submit').on('click', function(){
+    const email = $('#login-email').val();
+    const password = $('#login-password').val();
+    $.post('/backend/api.php?action=login', {email, password}, function(resp){
+      if (resp.success) { $('#loginModal').modal('hide'); loadMe(); fetchList(); }
+      else $('#login-error').text('Invalid credentials');
+    }, 'json');
+  });
+
+  $('#signup-submit').on('click', function(){
+    const name = $('#signup-name').val();
+    const email = $('#signup-email').val();
+    const password = $('#signup-password').val();
+    $.post('/backend/api.php?action=signup', {name, email, password}, function(resp){
+      if (resp.success) { $('#signupModal').modal('hide'); loadMe(); fetchList(); }
+      else $('#signup-error').text('Error creating account');
     }, 'json');
   });
 });

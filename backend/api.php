@@ -1,6 +1,7 @@
 <?php
 header('Content-Type: application/json');
 require_once __DIR__ . '/connection.php';
+session_start();
 
 $action = $_REQUEST['action'] ?? 'list';
 
@@ -56,6 +57,17 @@ if ($action === 'detail') {
     $amen = [];
     while ($a = $amenR->fetch_assoc()) $amen[] = $a;
     $prop['amenities'] = $amen;
+    // include whether current session user is interested
+    $is_interested = false;
+    $user_id = $_SESSION['user_id'] ?? 0;
+    if ($user_id) {
+        $chk = $conn->prepare("SELECT 1 FROM interested_users WHERE user_id=? AND property_id=?");
+        $chk->bind_param('ii', $user_id, $id);
+        $chk->execute();
+        $r = $chk->get_result();
+        if ($r->fetch_assoc()) $is_interested = true;
+    }
+    $prop['is_interested'] = $is_interested;
     json_die(['success'=>true,'data'=>$prop]);
 }
 
@@ -75,8 +87,8 @@ if ($action === 'shortlist') {
 }
 
 if ($action === 'toggle_interest') {
-    // expects POST: user_id, property_id
-    $user_id = intval($_POST['user_id'] ?? 0);
+    // expects POST: property_id; user from session (preferred) or user_id
+    $user_id = intval($_SESSION['user_id'] ?? ($_POST['user_id'] ?? 0));
     $property_id = intval($_POST['property_id'] ?? 0);
     if (!$user_id || !$property_id) json_die(['success'=>false,'error'=>'missing params']);
     // check existing
@@ -97,6 +109,30 @@ if ($action === 'toggle_interest') {
     }
 }
 
+if ($action === 'is_interested') {
+    $property_id = intval($_GET['property_id'] ?? 0);
+    $user_id = intval($_SESSION['user_id'] ?? 0);
+    if (!$user_id || !$property_id) json_die(['success'=>true,'interested'=>false]);
+    $chk = $conn->prepare("SELECT 1 FROM interested_users WHERE user_id=? AND property_id=?");
+    $chk->bind_param('ii',$user_id,$property_id);
+    $chk->execute();
+    $res = $chk->get_result();
+    json_die(['success'=>true,'interested'=> (bool)$res->fetch_assoc() ]);
+}
+
+if ($action === 'me') {
+    if (isset($_SESSION['user_id'])) {
+        json_die(['success'=>true,'user'=>['user_id'=>$_SESSION['user_id'],'name'=>$_SESSION['name']]]);
+    }
+    json_die(['success'=>false,'user'=>null]);
+}
+
+if ($action === 'logout') {
+    session_unset();
+    session_destroy();
+    json_die(['success'=>true]);
+}
+
 if ($action === 'signup') {
     $name = $_POST['name'] ?? '';
     $email = $_POST['email'] ?? '';
@@ -105,7 +141,13 @@ if ($action === 'signup') {
     $hash = password_hash($password, PASSWORD_DEFAULT);
     $stmt = $conn->prepare("INSERT INTO users (name,email,password) VALUES (?,?,?)");
     $stmt->bind_param('sss',$name,$email,$hash);
-    if ($stmt->execute()) json_die(['success'=>true,'user_id'=>$stmt->insert_id]);
+    if ($stmt->execute()) {
+        $uid = $stmt->insert_id;
+        // auto-login
+        $_SESSION['user_id'] = $uid;
+        $_SESSION['name'] = $name;
+        json_die(['success'=>true,'user_id'=>$uid]);
+    }
     json_die(['success'=>false,'error'=>'db error']);
 }
 
@@ -119,7 +161,8 @@ if ($action === 'login') {
     $res = $stmt->get_result();
     $u = $res->fetch_assoc();
     if ($u && password_verify($password, $u['password'])) {
-        // In production use sessions / JWT. Here we return user id for demo.
+        $_SESSION['user_id'] = intval($u['id']);
+        $_SESSION['name'] = $u['name'];
         json_die(['success'=>true,'user_id'=>intval($u['id']),'name'=>$u['name']]);
     }
     json_die(['success'=>false,'error'=>'invalid']);
