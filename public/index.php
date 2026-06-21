@@ -86,12 +86,25 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="/assets/js/main.js"></script>
 
-<!-- React for shortlist component -->
-<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-<script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
-<script type="text/babel" src="/react/ShortlistComponent.jsx"></script>
+<!-- React shortlist component (built) -->
 <div id="shortlist-root" class="container my-4"></div>
+<?php
+  // include built react assets from public/react
+  $assetsDir = __DIR__ . '/react/assets';
+  if (is_dir($assetsDir)) {
+    $files = scandir($assetsDir);
+    foreach ($files as $f){
+      if (preg_match('/^index-.*\\.css$/', $f)) {
+        echo "<link rel=\"stylesheet\" href=\"/react/assets/$f\">\n";
+      }
+    }
+    foreach ($files as $f){
+      if (preg_match('/^index-.*\\.js$/', $f)) {
+        echo "<script type=\"module\" src=\"/react/assets/$f\"></script>\n";
+      }
+    }
+  }
+?>
 
 </body>
 </html>
