@@ -20,6 +20,9 @@
 
 <div class="container my-4">
   <div class="row mb-3">
+    <div class="col-md-4">
+      <input id="search-q" class="form-control" placeholder="Search properties by name, city or description">
+    </div>
     <div class="col-md-3">
       <select id="filter-city" class="form-select">
         <option value="">All Cities</option>
@@ -45,6 +48,7 @@
   </div>
 
   <div id="listing" class="row"></div>
+  <nav><ul id="pagination" class="pagination justify-content-center"></ul></nav>
 </div>
 
 <!-- Login Modal -->

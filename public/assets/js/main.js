@@ -4,8 +4,9 @@ function fetchList(){
   const city = $('#filter-city').val();
   const gender = $('#filter-gender').val();
   const max_price = $('#filter-price').val();
+  const q = $('#search-q').val();
   $('#listing').html('<div class="loading">Loading...</div>');
-  $.getJSON('/backend/api.php?action=list', {city, gender, max_price}, function(resp){
+  $.getJSON('/backend/api.php?action=list', {city, gender, max_price, q, page: currentPage, per_page: perPage}, function(resp){
     if (!resp.success) { $('#listing').html('Error'); return; }
     const data = resp.data;
     if (!data.length) { $('#listing').html('<p>No properties found.</p>'); return; }
@@ -26,10 +27,21 @@ function fetchList(){
       `;
     }).join('');
     $('#listing').html(html);
+    // pagination
+    const total = resp.total || 0;
+    const pages = Math.max(1, Math.ceil(total / resp.per_page));
+    const pagHtml = [];
+    for (let i=1;i<=pages;i++){
+      pagHtml.push(`<li class="page-item ${i===resp.page?'active':''}"><a class="page-link pag-link" href="#" data-page="${i}">${i}</a></li>`);
+    }
+    $('#pagination').html(pagHtml.join(''));
   });
 }
 
 $(function(){
+  let currentPage = 1;
+  const perPage = 6;
+  $(document).on('click','.pag-link', function(e){ e.preventDefault(); currentPage = parseInt($(this).data('page')); fetchList(); });
   let currentUser = null;
   function loadMe(){
     $.getJSON('/backend/api.php?action=me', function(resp){
@@ -44,6 +56,7 @@ $(function(){
   loadMe();
 
   fetchList();
+  $('#search-q').on('keypress', function(e){ if (e.key === 'Enter') { currentPage=1; fetchList(); } });
   $('#apply-filters').on('click', fetchList);
   $('#listing').on('click', '.interest-btn', function(){
     const pid = $(this).data('id');

@@ -14,6 +14,9 @@ if ($action === 'list') {
     $city = $_GET['city'] ?? '';
     $max_price = $_GET['max_price'] ?? '';
     $gender = $_GET['gender'] ?? '';
+    $q = $_GET['q'] ?? '';
+    $page = max(1, intval($_GET['page'] ?? 1));
+    $per_page = max(1, intval($_GET['per_page'] ?? 6));
 
     $conds = [];
     $params = [];
@@ -21,13 +24,32 @@ if ($action === 'list') {
     if ($city !== '') { $conds[] = "city = ?"; $params[] = $city; }
     if ($max_price !== '') { $conds[] = "price <= ?"; $params[] = $max_price; }
     if ($gender !== '') { $conds[] = "gender = ?"; $params[] = $gender; }
+    if ($q !== '') { $conds[] = "(name LIKE ? OR description LIKE ? OR city LIKE ?)"; $params[] = "%$q%"; $params[] = "%$q%"; $params[] = "%$q%"; }
 
-    $sql = "SELECT id, name, city, price, gender, rating, images FROM properties";
-    if (count($conds)) $sql .= ' WHERE ' . implode(' AND ', $conds);
-    $stmt = $conn->prepare($sql);
+    $where = count($conds) ? (' WHERE ' . implode(' AND ', $conds)) : '';
+
+    // total count
+    $countSql = "SELECT COUNT(*) as cnt FROM properties" . $where;
+    $countStmt = $conn->prepare($countSql);
     if ($params) {
         $types = str_repeat('s', count($params));
-        $stmt->bind_param($types, ...$params);
+        $countStmt->bind_param($types, ...$params);
+    }
+    $countStmt->execute();
+    $countRes = $countStmt->get_result()->fetch_assoc();
+    $total = intval($countRes['cnt']);
+
+    $offset = ($page - 1) * $per_page;
+    $sql = "SELECT id, name, city, price, gender, rating, images FROM properties" . $where . " ORDER BY id DESC LIMIT ?,?";
+    // add offset and limit to params
+    $execParams = $params;
+    $execParams[] = $offset;
+    $execParams[] = $per_page;
+    $stmt = $conn->prepare($sql);
+    if ($execParams) {
+        // build types: original params are strings, offset/limit are integers
+        $types = str_repeat('s', count($params)) . 'ii';
+        $stmt->bind_param($types, ...$execParams);
     }
     $stmt->execute();
     $res = $stmt->get_result();
@@ -36,7 +58,7 @@ if ($action === 'list') {
         $r['images'] = $r['images'] ? explode(',', $r['images']) : [];
         $rows[] = $r;
     }
-    json_die(['success' => true, 'data' => $rows]);
+    json_die(['success' => true, 'data' => $rows, 'total' => $total, 'page' => $page, 'per_page' => $per_page]);
 }
 
 if ($action === 'detail') {
@@ -122,9 +144,27 @@ if ($action === 'is_interested') {
 
 if ($action === 'me') {
     if (isset($_SESSION['user_id'])) {
-        json_die(['success'=>true,'user'=>['user_id'=>$_SESSION['user_id'],'name'=>$_SESSION['name']]]);
+        $uid = $_SESSION['user_id'];
+        $stmt = $conn->prepare("SELECT id, name, email, phone FROM users WHERE id=?");
+        $stmt->bind_param('i',$uid);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        $u = $res->fetch_assoc();
+        json_die(['success'=>true,'user'=>['user_id'=>$u['id'],'name'=>$u['name'],'email'=>$u['email'],'phone'=>$u['phone']]]);
     }
     json_die(['success'=>false,'user'=>null]);
+}
+
+if ($action === 'profile_update') {
+    $uid = $_SESSION['user_id'] ?? 0;
+    if (!$uid) json_die(['success'=>false,'error'=>'not logged in']);
+    $name = $_POST['name'] ?? '';
+    $phone = $_POST['phone'] ?? '';
+    if (!$name) json_die(['success'=>false,'error'=>'missing name']);
+    $stmt = $conn->prepare("UPDATE users SET name=?, phone=? WHERE id=?");
+    $stmt->bind_param('ssi',$name,$phone,$uid);
+    if ($stmt->execute()) json_die(['success'=>true]);
+    json_die(['success'=>false,'error'=>'db']);
 }
 
 if ($action === 'logout') {
@@ -137,10 +177,11 @@ if ($action === 'signup') {
     $name = $_POST['name'] ?? '';
     $email = $_POST['email'] ?? '';
     $password = $_POST['password'] ?? '';
+    $phone = $_POST['phone'] ?? '';
     if (!$name || !$email || !$password) json_die(['success'=>false,'error'=>'missing fields']);
     $hash = password_hash($password, PASSWORD_DEFAULT);
-    $stmt = $conn->prepare("INSERT INTO users (name,email,password) VALUES (?,?,?)");
-    $stmt->bind_param('sss',$name,$email,$hash);
+    $stmt = $conn->prepare("INSERT INTO users (name,email,password,phone) VALUES (?,?,?,?)");
+    $stmt->bind_param('ssss',$name,$email,$hash,$phone);
     if ($stmt->execute()) {
         $uid = $stmt->insert_id;
         // auto-login
